@@ -116,6 +116,31 @@
     \end{columns}
 \end{frame}
 
+\begin{frame}[shrink=8]
+    \frametitle{Análise de agrupamentos}
+    \framesubtitle{Métodos particionais (Everitt et al., 2011)}
+
+    \begin{block}{Ideia central}
+        \small
+        Formar grupos com \textbf{homogeneidade interna} e \textbf{heterogeneidade externa}: objetos semelhantes no mesmo grupo e grupos distintos entre si.
+    \end{block}
+
+    \begin{itemize}
+        \footnotesize
+        \item Dois grandes tipos: \textbf{hierárquicos} e \textbf{particionais} (foco deste trabalho)
+        \item Métodos particionais partem de uma partição inicial com $K$ grupos pré-definidos e reatribuem objetos até convergir (Friedman \& Rubin, 1967)
+    \end{itemize}
+
+    \begin{block}{Os três algoritmos adaptados pelo artigo}
+        \footnotesize
+        \begin{itemize}
+            \item \textbf{K-means}: minimiza a soma de quadrados intragrupos (WSS); usa centroides
+            \item \textbf{CLARANS}: usa medoides (objetos reais); mais robusto a \textit{outliers} (Ng \& Han, 2002)
+            \item \textbf{Hill Climbing}: busca local que otimiza um critério de dissimilaridade (Friedman \& Rubin, 1967)
+        \end{itemize}
+    \end{block}
+\end{frame}
+
 \begin{frame}[t]
     \frametitle{Aplicações da análise de formas}
     \framesubtitle{Aplicações em morfometria e análise de formas}
@@ -134,27 +159,49 @@
 \end{frame}
 
 \begin{frame}[t]
-    \frametitle{Lacuna na literatura e objetivos}
-    \framesubtitle{Contribuição de Nascimento et al.\ (2024)}
+    \frametitle{Análise estatística de formas}
+    \framesubtitle{Representação geométrica de objetos (Kendall, 1984; Dryden \& Mardia, 2016)}
 
-    \vspace{-0.1cm}
-    \begin{block}{Lacuna na literatura}
+    \begin{columns}[T,onlytextwidth]
+        \column{0.58\textwidth}
         \footnotesize
+        Ramo da estatística que trabalha com a \textbf{geometria} dos objetos, representados por \textbf{marcos} (\textit{landmarks}) --- matriz $X \in \mathbb{R}^{k\times m}$.
         \begin{itemize}
-            \item Poucos métodos de agrupamento adaptados a formas 3D
-            \item Passar de 2D para 3D não é ``só mais uma dimensão'' (espaço estratificado)
-            \item Vinué et al.\ (2014): k-means e k-means podado para 3D
+            \setlength{\itemsep}{0.2em}
+            \item \textbf{Forma}: informação que resta após remover \textbf{posição}, \textbf{escala} e \textbf{rotação} (Kendall, 1977)
+            \item Comparação exige métricas próprias (Procrustes / riemanniana), não a distância euclidiana usual
+            \item Conceitos fundamentais: Bookstein et al.\ (1986); Kendall (1984)
         \end{itemize}
-    \end{block}
-    \vspace{0.15em}
-    \begin{block}{Objetivo}
+        \column{0.40\textwidth}
+        \figpainel[0.32\textheight]{cerebro.png}{Ex.: morfologia do córtex cerebral em estudos clínicos (Brignell et al., 2010).}
+    \end{columns}
+\end{frame}
+
+\begin{frame}[shrink=5]
+    \frametitle{Revisão: do agrupamento de formas 2D ao 3D}
+    \framesubtitle{Posicionamento na literatura}
+
+    \begin{table}
+        \centering
         \footnotesize
-        \begin{enumerate}
-            \item Adaptar \textbf{k-means}, \textbf{CLARANS} e \textbf{Hill Climbing} ao espaço de formas 3D
-            \item Aplicar \textbf{Bagging} (BagClust1) para melhorar estabilidade e acurácia
-            \item Avaliar com simulação e dados reais (RI e FMI)
-        \end{enumerate}
-    \end{block}
+        \begin{tabular}{@{}llp{5.6cm}@{}}
+            \toprule
+            \textbf{Trabalho} & \textbf{Dim.} & \textbf{Contribuição} \\
+            \midrule
+            Amaral et al.\ (2010) & 2D & K-means adaptado a formas (oceanografia) \\
+            Assis et al.\ (2021) & 2D & \textbf{Bagging + K-means} para formas planas \\
+            Vinué et al.\ (2014) & 3D & K-means e K-means podado para formas 3D \\
+            Nascimento et al.\ (2024) & 3D & K-means, \textbf{CLARANS}, \textbf{Hill Climbing} + \textbf{Bagging} \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+
+    \begin{itemize}
+        \footnotesize
+        \item Em \textbf{2D}, o espaço de formas é variedade riemanniana (mais tratável)
+        \item Em \textbf{3D}, é espaço \textbf{estratificado com singularidades} (Bhattacharya \& Bhattacharya, 2012)
+        \item Lacuna: CLARANS e Hill Climbing ainda não haviam sido adaptados a formas 3D
+    \end{itemize}
 \end{frame}
 
 \begin{frame}[t]
@@ -177,6 +224,45 @@
         \column{0.45\textwidth}
         \figpainel[0.34\textheight]{Ilustração_analogia_intuitiva.png}{Variedade suave (2D) vs.\ singularidades (3D).}
     \end{columns}
+\end{frame}
+
+\begin{frame}[t]
+    \frametitle{Bagging em agrupamento: antecedentes}
+    \framesubtitle{Por que combinar Bagging com clustering}
+
+    \begin{itemize}
+        \footnotesize
+        \setlength{\itemsep}{0.25em}
+        \item \textbf{Bagging} (Breiman, 1996): \textit{ensemble} baseado em amostras \textit{bootstrap}
+        \item \textbf{Leisch (1999)}: \textit{bagged clustering} --- combina métodos hierárquicos e particionais
+        \item \textbf{Dudoit \& Fridlyand (2003)}: procedimento \textbf{BagClust1} estabiliza métodos baseados em medoides (PAM)
+        \item \textbf{Assis et al.\ (2021)}: Bagging melhora o K-means em formas \textbf{2D}
+    \end{itemize}
+
+    \begin{alertblock}{Motivação para este artigo}
+        \footnotesize
+        Métodos particionais são \textbf{instáveis} (inicialização aleatória, \textit{outliers}, ótimos locais). O Bagging busca maior estabilidade --- recurso ainda não explorado em formas \textbf{3D}.
+    \end{alertblock}
+\end{frame}
+
+\begin{frame}[t]
+    \frametitle{Objetivos e contribuição}
+    \framesubtitle{Contribuição de Nascimento et al.\ (2024)}
+
+    \vspace{-0.1cm}
+    \begin{block}{Lacuna específica}
+        \footnotesize
+        Vinué et al.\ (2014) adaptaram apenas o K-means a formas 3D; \textbf{CLARANS}, \textbf{Hill Climbing} e o uso de \textbf{Bagging} permaneciam inexplorados nesse contexto.
+    \end{block}
+    \vspace{0.15em}
+    \begin{block}{Objetivos}
+        \footnotesize
+        \begin{enumerate}
+            \item Adaptar \textbf{k-means}, \textbf{CLARANS} e \textbf{Hill Climbing} ao espaço de formas 3D
+            \item Aplicar \textbf{Bagging} (BagClust1) para melhorar estabilidade e acurácia
+            \item Avaliar com simulação e dados reais (RI e FMI)
+        \end{enumerate}
+    \end{block}
 \end{frame}
 
 \section[Formas]{Background: Análise Estatística de Formas}
@@ -923,6 +1009,36 @@
         Assis, E.\ C.\ D.; Souza, R.\ M.\ C.\ R.\ D.; Amaral, G.\ J.\ A.\ D.
         Using bagging to enhance clustering procedures for planar shapes.
         \textit{International Journal of Business Intelligence and Data Mining}, 18(1):30--48, 2021.
+
+        \bibitem{everitt2011}
+        Everitt, B.\ S.; Landau, S.; Leese, M.; Stahl, D.
+        \textit{Cluster Analysis}, 5th ed.
+        Wiley, 2011.
+
+        \bibitem{amaral2010}
+        Amaral, G.\ J.\ A.; Dore, L.\ H.; Lessa, R.\ P.; Stosic, B.
+        k-means algorithm in statistical shape analysis.
+        \textit{Communications in Statistics --- Simulation and Computation}, 39(5):1016--1026, 2010.
+
+        \bibitem{leisch1999}
+        Leisch, F.
+        Bagged clustering.
+        \textit{Working Paper 51}, SFB Adaptive Information Systems and Modelling in Economics and Management Science, 1999.
+
+        \bibitem{bhattacharya2012}
+        Bhattacharya, A.; Bhattacharya, R.
+        \textit{Nonparametric Inference on Manifolds: With Applications to Shape Spaces}.
+        Cambridge University Press, 2012.
+
+        \bibitem{friedman1967}
+        Friedman, H.\ P.; Rubin, J.
+        On some invariant criteria for grouping data.
+        \textit{Journal of the American Statistical Association}, 62(320):1159--1178, 1967.
+
+        \bibitem{bookstein1986}
+        Bookstein, F.\ L.
+        Size and shape spaces for landmark data in two dimensions.
+        \textit{Statistical Science}, 1(2):181--222, 1986.
     \end{thebibliography}
 \end{frame}
 
