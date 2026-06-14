@@ -1,0 +1,712 @@
+% Material Didático: Bagging para Agrupamento de Formas 3D
+% Baseado no artigo: Nascimento et al. (2024)
+% Para estudantes de Mestrado em Estatística/Multivariada
+\documentclass[12pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[brazilian,provide=*]{babel}
+\usepackage{amsmath,amssymb,amsfonts,mathtools,amsthm}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{tcolorbox}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+\geometry{margin=2.5cm}
+
+% Cores para destaques
+\definecolor{azuldestaque}{RGB}{0,82,155}
+\definecolor{verdeclaro}{RGB}{144,238,144}
+\definecolor{laranjadestaque}{RGB}{255,140,0}
+
+% Teoremas e definições
+\theoremstyle{definition}
+\newtheorem{definicao}{Definição}[section]
+\newtheorem{exemplo}{Exemplo}[section]
+\newtheorem{observacao}{Observação}[section]
+\newtheorem{proposicao}{Proposição}[section]
+
+% Caixas de destaque
+\tcbset{
+  caixaconceito/.style={
+    colback=blue!5!white,
+    colframe=azuldestaque,
+    fonttitle=\bfseries,
+    title=#1
+  },
+  caixaalgoritmo/.style={
+    colback=green!5!white,
+    colframe=green!50!black,
+    fonttitle=\bfseries,
+    title=#1
+  },
+  caixaimportante/.style={
+    colback=orange!5!white,
+    colframe=laranjadestaque,
+    fonttitle=\bfseries,
+    title=#1
+  }
+}
+
+\title{\textbf{Material Didático:}\\[0.3cm]
+\large Uso de Bagging para Melhorar Agrupamento de Formas Tridimensionais\\[0.2cm]
+\normalsize Baseado em Nascimento, Ospina e Amorim (2024)}
+\author{Material de Apoio para Mestrado em Estatística\\
+\textit{Análise Multivariada e Análise de Formas}}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+\noindent Este material didático apresenta, de forma detalhada e gradual, os conceitos fundamentais necessários para compreender o artigo ``Using Bagging to improve clustering methods in the context of three-dimensional shapes'' (Nascimento et al., 2024). O texto é destinado a estudantes de mestrado e assume conhecimento básico de estatística, mas explica todos os conceitos específicos de análise de formas, algoritmos de agrupamento e métodos de ensemble. Incluímos exemplos numéricos, ilustrações conceituais e discussões sobre as escolhas metodológicas do artigo.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+%=====================================================================
+\section{Introdução: Por que Analisar Formas?}
+%=====================================================================
+
+\begin{tcolorbox}[caixaconceito={Contexto Motivador}]
+Imagine que você é um paleontólogo e encontrou fósseis de crânios de diferentes espécies de dinossauros. Como determinar se dois crânios pertencem à mesma espécie ou a espécies diferentes? O tamanho pode não ser suficiente (dois indivíduos da mesma espécie podem ter tamanhos diferentes). A \textbf{forma} --- a estrutura geométrica independente de escala --- é frequentemente mais informativa.
+\end{tcolorbox}
+
+\subsection{O Problema Central}
+
+A análise estatística de formas (\textit{Statistical Shape Analysis}) lida com objetos onde a geometria é a informação relevante. Exemplos de aplicações:
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Medicina}: Comparar formas de órgãos (coração, cérebro) entre pacientes saudáveis e doentes
+    \item \textbf{Biologia}: Classificar espécies baseando-se na morfologia de estruturas anatômicas
+    \item \textbf{Engenharia}: Análise de qualidade de peças manufacturadas
+    \item \textbf{Arqueologia}: Comparar artefatos de culturas diferentes
+\end{itemize}
+
+\subsection{Desafios Específicos}
+
+\begin{tcolorbox}[caixaimportante={Por que formas 3D são mais difíceis que 2D?}]
+O artigo enfatiza que passar de formas 2D para 3D não é apenas ``adicionar uma dimensão''. O \textbf{espaço de formas 3D} tem uma estrutura matemática mais complexa chamada \textbf{espaço estratificado}, que contém \textbf{singularidades} --- pontos onde a geometria do espaço muda abruptamente.
+
+\textbf{Analogia intuitiva:} Imagine uma esfera (variedade suave) versus um cone (singularidade no vértice). Em 2D, o espaço de formas é uma esfera suave. Em 3D, é como uma esfera com ``dobras'' e ``picos'' onde os métodos estatísticos tradicionais podem falhar.
+\end{tcolorbox}
+
+%=====================================================================
+\section{Fundamentos de Análise de Formas}
+%=====================================================================
+
+\subsection{Configurações e Marcos (Landmarks)}
+
+\begin{definicao}[Configuração]
+Uma \textbf{configuração} é uma coleção de $k$ pontos (chamados \textbf{marcos} ou \textit{landmarks}) em $\mathbb{R}^m$, representada por uma matriz $X$ de dimensão $k \times m$:
+\[
+X = \begin{bmatrix}
+x_{11} & x_{12} & \cdots & x_{1m} \\
+x_{21} & x_{22} & \cdots & x_{2m} \\
+\vdots & \vdots & \ddots & \vdots \\
+x_{k1} & x_{k2} & \cdots & x_{km}
+\end{bmatrix}
+\]
+Cada linha representa as coordenadas de um marco no espaço $m$-dimensional.
+\end{definicao}
+
+\begin{exemplo}[Crânio de Macaco]
+No artigo, os autores analisam crânios de macacos $\textit{Macaca fascicularis}$ com $k=7$ marcos anatômicos em 3 dimensões ($m=3$):
+\begin{enumerate}
+    \item Prosthion (ponto frontal)
+    \item Nasion (junta nasal)
+    \item Bregma (junta coronária)
+    \item Opisthion (ponto posterior)
+    \item Asterion (ponto lateral)
+    \item Interfrontomalare (ponto orbitário)
+    \item Midpoint (ponto médio)
+\end{enumerate}
+Cada crânio é uma matriz $7 \times 3$.
+\end{exemplo}
+
+\subsection{O Problema das Similaridades Euclidianas}
+
+A matriz $X$ \textbf{não} define unicamente uma forma porque depende de:
+\begin{itemize}
+    \item \textbf{Localização (Translação)}: Onde o objeto está no espaço
+    \item \textbf{Escala}: O quão grande o objeto é
+    \item \textbf{Rotação}: A orientação do objeto
+\end{itemize}
+
+\begin{tcolorbox}[caixaconceito={Exemplo Visual}]
+Considere a mesma cadeira fotografada em duas posições:
+\begin{itemize}
+    \item Cadeira A: no canto da sala, vista de frente, a 2 metros
+    \item Cadeira B: no centro da sala, vista de lado, a 3 metros
+\end{itemize}
+As coordenadas dos pixels são completamente diferentes, mas a \textbf{forma} da cadeira é idêntica. Precisamos remover essas ``nuisance parameters'' (parâmetros incômodos).
+\end{tcolorbox}
+
+\subsection{Passo 1: Removendo a Localização (Centragem)}
+
+\begin{definicao}[Matriz de Helmert]
+A \textbf{submatriz de Helmert} $H$ é uma matriz $(k-1) \times k$ que transforma coordenadas removendo o efeito de translação. É obtida removendo-se a primeira linha da matriz de Helmert completa.
+
+Para $k=3$ marcos em 2D:
+\[
+H = \begin{bmatrix}
+-1/\sqrt{2} & 1/\sqrt{2} & 0 \\
+-1/\sqrt{6} & -1/\sqrt{6} & 2/\sqrt{6}
+\end{bmatrix}
+\]
+
+Multiplicar $HX$ centraliza os dados no centro de gravidade.
+\end{definicao}
+
+\begin{observacao}[Por que Helmert?]
+A matriz de Helmert é ortogonal ($H^TH = I$) e garante que a transformação preserve distâncias (isometria). Outras formas de centralização existem, mas Helmert é padrão na literatura de análise de formas por propriedades matemáticas convenientes.
+\end{observacao}
+
+\subsection{Passo 2: Removendo a Escala (Normalização)}
+
+\begin{definicao}[Pré-forma]
+Dada uma configuração $X$, sua \textbf{pré-forma} $Z$ é obtida por:
+\begin{equation}
+Z = \frac{HX}{\|HX\|}
+\end{equation}
+onde $\|HX\| = \sqrt{\text{tr}((HX)^T(HX))}$ é a norma de Frobenius.
+
+O conjunto de todas as pré-formas é chamado de \textbf{espaço de pré-formas} $\mathcal{S}_m^k$.
+\end{definicao}
+
+\begin{tcolorbox}[caixaimportante={O que foi removido até agora?}]
+\begin{itemize}
+    \item[$\checkmark$] Translação (via Helmert)
+    \item[$\checkmark$] Escala (via normalização)
+    \item[$\times$] Rotação (ainda presente!)
+\end{itemize}
+A pré-forma $Z$ ainda pode ser rotacionada arbitrariamente. Duas pré-formas $Z_1$ e $Z_2$ representam a mesma forma se diferirem apenas por uma rotação.
+\end{tcolorbox}
+
+\subsection{Passo 3: O Espaço de Formas (Quociente por Rotações)}
+
+\begin{definicao}[Espaço de Formas]
+O \textbf{espaço de formas} $\Sigma_m^k$ é o conjunto de classes de equivalência de pré-formas sob rotação:
+\begin{equation}
+[Z] = \{Z\Gamma : \Gamma \in SO(m)\}
+\end{equation}
+onde $SO(m)$ é o grupo especial ortogonal (matrizes de rotação $m \times m$ com determinante +1).
+\end{definicao}
+
+\begin{tcolorbox}[caixaconceito={Analogia: Fotos da Mesma Pessoa}]
+Imagine várias fotos da mesma cadeira tiradas de ângulos diferentes (rotações). Cada foto é uma pré-forma diferente, mas todas pertencem à mesma classe $[Z]$ no espaço de formas. A análise de formas trabalha com essas classes, não com as pré-formas individuais.
+\end{tcolorbox}
+
+\subsection{Geometria do Espaço de Formas}
+
+\begin{proposicao}[Estrutura Geométrica]
+O espaço de pré-formas $\mathcal{S}_m^k$ é uma hiperesfera de raio unitário em $\mathbb{R}^{(k-1)m}$ (variedade riemanniana bem comportada).
+
+Porém, o espaço de formas $\Sigma_m^k$ para $m \geq 3$ é um \textbf{espaço estratificado} --- não é uma variedade suave, contém singularidades.
+\end{proposicao}
+
+\begin{observacao}[Implicações Práticas]
+Isso significa que:
+\begin{enumerate}
+    \item Não podemos usar estatística euclidiana ``ingênua'' (médias aritméticas simples)
+    \item O cálculo de médias requer otimização em espaços não-lineares
+    \item Para $m=2$ (formas planas), a teoria é mais simples; para $m=3$, há complexidades adicionais
+\end{enumerate}
+\end{observacao}
+
+%=====================================================================
+\section{Distâncias em Análise de Formas}
+%=====================================================================
+
+Para comparar formas, precisamos de uma noção de distância no espaço de formas.
+
+\subsection{Distância Riemanniana Completa}
+
+\begin{definicao}[Distância Riemanniana]
+A \textbf{distância riemanniana} $\rho(X_1, X_2)$ entre duas configurações é o menor ângulo (geodésica) entre suas pré-formas na hiperesfera $\mathcal{S}_m^k$, otimizando sobre todas as rotações:
+\begin{equation}
+\rho(X_1, X_2) = \inf_{\Gamma \in SO(m)} \arccos(\langle Z_1, Z_2\Gamma \rangle)
+\end{equation}
+onde $\langle A, B \rangle = \text{tr}(A^TB)$ é o produto interno de Frobenius.
+\end{definicao}
+
+\begin{exemplo}[Cálculo Simplificado]
+Para duas pré-formas $Z_1$ e $Z_2$ na hiperesfera unitária:
+\begin{enumerate}
+    \item Calcular a matriz de covariância: $S = Z_1^T Z_2$
+    \item Decompor em valores singulares (SVD): $S = UDV^T$
+    \item A distância é: $\rho = \arccos(\sum_{i=1}^m d_i)$, onde $d_i$ são os valores singulares
+\end{enumerate}
+O SVD resolve automaticamente o problema de alinhamento por rotação!
+\end{exemplo}
+
+\subsection{Distância de Procrustes Completa}
+
+\begin{definicao}[Distância de Procrustes]
+A \textbf{distância de Procrustes completa} $d_F$ inclui também otimização sobre escala:
+\begin{equation}
+d_F(X_1, X_2) = \inf_{\Gamma \in SO(m), \beta > 0} \|Z_2 - \beta Z_1\Gamma\|
+\end{equation}
+
+Relação com a distância riemanniana:
+\begin{equation}
+d_F = \sin(\rho)
+\end{equation}
+\end{definicao}
+
+\begin{tcolorbox}[caixaconceito={Mitologia de Procrustes}]
+Na mitologia grega, Procrustes era um ladrão que forçava viajantes a se encaixarem em sua cama --- esticando-os se fossem curtos ou cortando suas pernas se fossem altos. Analogamente, a análise de Procrustes ``encaixa'' formas uma na outra por transformações rígidas (translação, rotação, escala) minimizando o ``desconforto'' (distância) entre pontos correspondentes.
+\end{tcolorbox}
+
+%=====================================================================
+\section{Agrupamento (Clustering) de Formas}
+%=====================================================================
+
+Agora que sabemos medir dissimilaridades entre formas, como agrupá-las?
+
+\subsection{O Que é Análise de Agrupamentos?}
+
+\begin{tcolorbox}[caixaconceito={Definição Operacional}]
+Dado um conjunto de $n$ objetos (formas), queremos particioná-los em $K$ grupos $G_1, G_2, \ldots, G_K$ tal que:
+\begin{enumerate}
+    \item Formas dentro do mesmo grupo são ``similares''
+    \item Formas em grupos diferentes são ``dissimilares'
+\end{enumerate}
+
+``Similaridade'' é medida por uma função de distância --- no nosso caso, a distância riemanniana entre formas.
+\end{tcolorbox}
+
+\subsection{Métodos Hierárquicos vs.
+Particionais}
+
+Existem duas grandes famílias:
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Hierárquicos}: Constroem uma árvore (dendrograma) aninhando grupos sucessivamente
+    \begin{itemize}
+        \item Vantagem: Não precisam especificar $K$ \textit{a priori}
+        \item Desvantagem: Pode ser computacionalmente caro ($O(n^3)$)
+    \end{itemize}
+    
+    \item \textbf{Particionais}: Dividem diretamente em $K$ grupos
+    \begin{itemize}
+        \item Vantagem: Mais eficientes computacionalmente
+        \item Desvantagem: Requerem $K$ pré-especificado
+    \end{itemize}
+\end{enumerate}
+
+O artigo foca em métodos particionais: K-médias, CLARANS e Hill Climbing.
+
+%=====================================================================
+\section{Métodos de Agrupamento Detalhados}
+%=====================================================================
+
+\subsection{K-médias (K-means)}
+
+\begin{tcolorbox}[caixaalgoritmo={Intuição do K-médias}]
+Imagine jogar $K$ pontos aleatoriamente no espaço (centroides). Depois:
+\begin{enumerate}
+    \item Cada objeto ``escolhe'' o centroide mais próximo
+    \item Cada centroide se move para o centro médio dos objetos que o escolheram
+    \item Repetir até convergir
+\end{enumerate}
+\end{tcolorbox}
+
+\begin{definicao}[Critério WSS]
+O K-médias minimiza a \textbf{soma de quadrados dentro dos grupos} (WSS):
+\begin{equation}
+W = \sum_{r=1}^K \sum_{i \in G_r} \text{Dist}^2(X_i, \mu_r)
+\end{equation}
+onde $\mu_r$ é a média (centroide) do grupo $r$.
+\end{definicao}
+
+\begin{tcolorbox}[caixaimportante={Adaptação para Formas}]
+No espaço euclidiano, a média é simples: $\mu_r = \frac{1}{|G_r|}\sum_{i \in G_r} X_i$. 
+
+Mas em espaço de formas? A ``média'' é a \textbf{média de Procrustes completa}, calculada iterativamente (Algoritmo 1 do artigo)!
+\end{tcolorbox}
+
+\textbf{Problemas do K-médias}:
+\begin{itemize}
+    \item Sensível a \textit{outliers} (valores atípicos puxam centroides)
+    \item Converge para ótimos locais (depende da inicialização)
+    \item Assume grupos esféricos (no espaço de formas, isso é uma aproximação)
+\end{itemize}
+
+\subsection{CLARANS: Clustering baseado em Medoides}
+
+\begin{definicao}[Medoide]
+Um \textbf{medoide} é um objeto real do conjunto de dados (não uma média artificial) que minimiza a dissimilaridade total para os outros objetos do seu grupo.
+
+Formalmente, para um grupo $G_r$, o medoide $m_r$ satisfaz:
+\begin{equation}
+m_r = \arg\min_{j \in G_r} \sum_{i \in G_r} d(X_i, X_j)
+\end{equation}
+\end{definicao}
+
+\begin{tcolorbox}[caixaconceito={K-médias vs.
+CLARANS}]
+\begin{itemize}
+    \item K-médias: Centroide pode ser um ponto ``vazio'' (média de formas não é uma forma real)
+    \item CLARANS: Medoide é sempre uma forma existente no conjunto de dados
+\end{itemize}
+Isso torna CLARANS mais robusto a \textit{outliers} e mais interpretável.
+\end{tcolorbox}
+
+\textbf{O Algoritmo CLARANS}:
+\begin{enumerate}
+    \item Trata o conjunto de dados como um grafo onde nós são conjuntos de $K$ medoides
+    \item Cada nó tem vizinhos que diferem por apenas um medoide
+    \item Faz busca aleatória (randomizada) neste grafo
+    \item Parâmetros importantes:
+    \begin{itemize}
+        \item \texttt{numlocal}: número de buscas locais
+        \item \texttt{maxneighbor}: máximo de vizinhos examinados
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Hill Climbing (Subida/descida da encosta)}
+
+\begin{tcolorbox}[caixaalgoritmo={Analogia da Montanha}]
+Imagine uma paisagem montanhosa onde a altitude representa a qualidade do agrupamento (menor altitude = melhor agrupamento). O algoritmo:
+\begin{enumerate}
+    \item Começa em uma posição aleatória (partição inicial)
+    \item Olha para os ``vizinhos'' (partições similares)
+    \item Se algum vizinho for ``mais baixo'' (melhor), move-se para lá
+    \item Para quando todos os vizinhos são ``mais altos'' (pior)
+\end{enumerate}
+É um algoritmo ganancioso (\textit{greedy}) que encontra otimos locais.
+\end{tcolorbox}
+
+\begin{definicao}[Critério TD (Total Dissimilarity)]
+Para Hill Climbing com medoides:
+\begin{equation}
+TD = \sum_{r=1}^K \sum_{i \in G_r} d(X_i, m_r)
+\end{equation}
+O algoritmo aceita movimentos que diminuem $TD$.
+\end{definicao}
+
+%=====================================================================
+\section{O Método Bagging}
+%=====================================================================
+
+\subsection{Motivação: Por que Bagging?}
+
+\begin{tcolorbox}[caixaimportante={O Problema da Instabilidade}]
+Algoritmos de agrupamento são frequentemente instáveis:
+\begin{itemize}
+    \item Pequenas mudanças nos dados podem levar a agrupamentos muito diferentes
+    \item Inicializações aleatórias podem levar a ótimos locais diferentes
+    \item \textit{Outliers} podem distorcer resultados
+\end{itemize}
+\textbf{Ideia do Bagging}: Ao invés de confiar em uma única execução, executar múltiplas vezes e ``votar''.
+\end{tcolorbox}
+
+\subsection{Bootstrap: Fundamento Teórico}
+
+\begin{definicao}[Amostra Bootstrap]
+Dada uma amostra original $\mathcal{X} = \{X_1, \ldots, X_n\}$, uma \textbf{amostra bootstrap} $\mathcal{X}^*$ é obtida por amostragem \textbf{com reposição} de tamanho $n$:
+\[
+\mathcal{X}^* = \{X_1^*, \ldots, X_n^*\}, \quad X_i^* \overset{iid}{\sim} \text{Uniforme}(\mathcal{X})
+\]
+\end{definicao}
+
+\begin{exemplo}[Bootstrap em Ação]
+Amostra original: $\{A, B, C, D, E\}$ (5 objetos)
+
+Amostra bootstrap possível: $\{A, A, B, D, D\}$
+\begin{itemize}
+    \item $A$ e $D$ aparecem duplicados
+    \item $C$ e $E$ não aparecem (fora da amostra, ~37\% esperado)
+\end{itemize}
+\end{exemplo}
+
+\subsection{Bagging para Agrupamento (BagClust1)}
+
+\begin{algorithm}[H]
+\caption{BagClust1 para Formas 3D}
+\begin{algorithmic}[1]
+\Require Conjunto de dados $\mathcal{X}$, algoritmo de agrupamento $\mathcal{A}$, número de réplicas $B$
+\Ensure Agrupamento final $\hat{G}$
+\State $n \gets |\mathcal{X}|$
+\For{$b = 1, 2, \ldots, B$}
+    \State $\mathcal{X}^{(b)} \gets$ amostra bootstrap de $\mathcal{X}$
+    \State $G^{(b)} \gets \mathcal{A}(\mathcal{X}^{(b)})$ \Comment{Agrupamento na réplica $b$}
+\EndFor
+\State \textbf{Fase de Consenso:}
+\For{cada objeto $X_i \in \mathcal{X}$}
+    \State Contar votos: $v_{ir} = \sum_{b=1}^B \mathbb{1}(X_i \in G_r^{(b)})$
+    \State Atribuir $X_i$ ao grupo com mais votos: $\hat{g}_i = \arg\max_r v_{ir}$
+\EndFor
+\State \Return $\hat{G} = (\hat{g}_1, \ldots, \hat{g}_n)$
+\end{algorithmic}
+\end{algorithm}
+
+\begin{observacao}[Por que funciona?]
+\begin{itemize}
+    \item Cada réplica bootstrap é uma ``visão ligeiramente diferente'' dos dados
+    \item Padrões verdadeiros persistem em todas as réplicas
+    \item Ruído/\textit{outliers} aparecem em poucas réplicas
+    \item Votação majoritária suprime ruído e amplifica sinal
+\end{itemize}
+\end{observacao}
+
+%=====================================================================
+\section{Validação de Agrupamentos}
+%=====================================================================
+
+Como saber se o agrupamento é ``bom''?
+
+\subsection{Índice de Rand (RI)}
+
+\begin{definicao}[Índice de Rand]
+Dado um agrupamento estimado $\hat{G}$ e um agrupamento verdadeiro (ou de referência) $G$, o \textbf{Índice de Rand} mede a proporção de pares de objetos classificados consistentemente:
+
+\begin{equation}
+RI = \frac{a + b}{\binom{n}{2}}
+\end{equation}
+onde:
+\begin{itemize}
+    \item $a$ = número de pares no mesmo grupo em $\hat{G}$ \textbf{e} em $G$
+    \item $b$ = número de pares em grupos diferentes em $\hat{G}$ \textbf{e} em $G$
+\end{itemize}
+\end{definicao}
+
+\begin{tcolorbox}[caixaconceito={Exemplo Numérico}]
+Considere 4 objetos: $\{1, 2, 3, 4\}$
+
+Agrupamento verdadeiro: $\{\{1,2\}, \{3,4\}\}$
+
+Agrupamento estimado: $\{\{1,3\}, \{2,4\}\}$
+
+Pares possíveis (6 total):
+\begin{itemize}
+    \item $(1,2)$: mesmo grupo no verdadeiro, diferente no estimado
+    \item $(1,3)$: diferente no verdadeiro, mesmo no estimado
+    \item $(1,4)$: diferente nos dois $\rightarrow b$ += 1
+    \item $(2,3)$: diferente nos dois $\rightarrow b$ += 1
+    \item $(2,4)$: diferente no verdadeiro, mesmo no estimado
+    \item $(3,4)$: mesmo no verdadeiro, diferente no estimado
+\end{itemize}
+
+Tempos $a=0$ (nenhum par coincidente) e $b=2$, então $RI = 2/6 \approx 0.33$.
+\end{tcolorbox}
+
+\textbf{Interpretação}: $RI \in [0, 1]$, onde 1 = concordância perfeita.
+
+\subsection{Índice de Fowlkes-Mallows (FMI)}
+
+\begin{definicao}[Fowlkes-Mallows Index]
+Define-se:
+\begin{itemize}
+    \item $TP$ = verdadeiros positivos (pares no mesmo grupo nos dois agrupamentos)
+    \item $FP$ = falsos positivos (pares juntos no estimado, separados no verdadeiro)
+    \item $FN$ = falsos negativos (pares separados no estimado, juntos no verdadeiro)
+\end{itemize}
+
+\begin{equation}
+FMI = \frac{TP}{\sqrt{(TP+FP)(TP+FN)}}
+\end{equation}
+\end{definicao}
+
+\begin{observacao}[RI vs.
+FMI]
+\begin{itemize}
+    \item Ambos em $[0,1]$, onde 1 é perfeito
+    \item RI considera tanto concordâncias positivas (juntos) quanto negativas (separados)
+    \item FMI é mais sensível a estrutura de grupos (similar a precisão/recall)
+    \item No artigo, ambos fornecem resultados similares
+\end{itemize}
+\end{observacao}
+
+\subsection{Teste de Wilcoxon Pareado}
+
+Para comparar métodos (com vs.
+sem Bagging), o artigo usa o teste de Wilcoxon:
+
+\begin{tcolorbox}[caixaconceito={Hipóteses do Teste}]
+\begin{itemize}
+    \item $H_0$: Método sem Bagging = Método com Bagging (medianas iguais)
+    \item $H_1$: Método sem Bagging $<$ Método com Bagging (Bagging é melhor)
+\end{itemize}
+Teste unilateral com $\alpha = 0.05$.
+\end{tcolorbox}
+
+%=====================================================================
+\section{Estudo de Simulação do Artigo}
+%=====================================================================
+
+\subsection{Design Experimental}
+
+\begin{tcolorbox}[caixaalgoritmo={Cenários Simulados}]
+\textbf{Figuras-base}: Cubo e Paralelepípedo com $k=8$ marcos
+
+\textbf{Geração de dados}:
+\begin{enumerate}
+    \item Selecionar forma-base (cubo ou paralelepípedo)
+    \item Adicionar ruído normal isotrópico ou anisotrópico
+    \item Aplicar rotação aleatória (distribuição von Mises)
+\end{enumerate}
+
+\textbf{Cenários}:
+\begin{itemize}
+    \item \textbf{Isotropia}: $\Sigma = \sigma^2 I$ (mesma variabilidade em todas as direções)
+    \item \textbf{Anisotropia}: $\Sigma$ com estrutura de covariância direcional
+    \item Dispersões: baixa ($\sigma=3$), média ($\sigma=6$), alta ($\sigma=9$)
+\end{itemize}
+\end{tcolorbox}
+
+\subsection{Resultados Principais}
+
+\begin{table}[h]
+\centering
+\caption{Resumo dos Resultados de Simulação}
+\begin{tabular}{llcc}
+\toprule
+Cenário & Algoritmo & Benefício do Bagging & Comentário \\
+\midrule
+\multirow{3}{*}{Isotropia} 
+& K-médias & Parcial & Apenas alta dispersão \\
+& CLARANS & Sim & Todos os cenários \\
+& Hill Climbing & Sim & Todos os cenários \\
+\midrule
+\multirow{3}{*}{Anisotropia} 
+& K-médias & Não & Nenhum ganho significativo \\
+& CLARANS & Sim & Média/alta dispersão \\
+& Hill Climbing & Sim & Média/alta dispersão \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{tcolorbox}[caixaimportante={Interpretação dos Resultados}]
+\textbf{Por que CLARANS e Hill Climbing beneficiam-se mais?}
+\begin{enumerate}
+    \item Ambos usam \textbf{medoides} (não médias), herdando robustez do PAM
+    \item O parâmetro \texttt{maxneighbor} pequeno em CLARANS limita a busca; Bagging compensa essa limitação
+    \item K-médias já é mais estável (usa médias), então ganhos do Bagging são marginais
+\end{enumerate}
+
+\textbf{Por que baixa dispersão não beneficia do Bagging?}
+Quando os grupos são bem separados ($\sigma$ pequeno), todos os algoritmos encontram a solução correta facilmente --- não há instabilidade para corrigir.
+\end{tcolorbox}
+
+%=====================================================================
+\section{Aplicações em Dados Reais}
+%=====================================================================
+
+\subsection{Crânios de Macacos ($N=18$)}
+
+\begin{itemize}
+    \item 9 machos vs.
+9 fêmeas
+    \item $k=7$ marcos anatômicos
+    \item \textbf{Resultado}: K-médias não beneficiou do Bagging (conjunto pequeno e bem separado)
+\end{itemize}
+
+\subsection{Cérebros Humanos ($N=58$)}
+
+\begin{itemize}
+    \item 43 destros vs.
+15 canhotos
+    \item $k=24$ marcos (12 por hemisfério)
+    \item \textbf{Resultado}: Todos os métodos beneficiaram-se do Bagging (ganhos 11--31\%)
+\end{itemize}
+
+\begin{observacao}[Lição Prática]
+O tamanho da amostra e a complexidade da separação influenciam o ganho do Bagging. Conjuntos maiores e mais ``confusos'' tendem a se beneficiar mais.
+\end{observacao}
+
+%=====================================================================
+\section{Conclusões e Recomendações Práticas}
+%=====================================================================
+
+\subsection{Checklist para Aplicação}
+
+\begin{enumerate}[leftmargin=*]
+    \item[\checkmark] Pré-processamento: Definir marcos anatômicamente relevantes
+    \item[\checkmark] Remover efeitos de pose: Aplicar Procrustes (translação, escala, rotação)
+    \item[\checkmark] Calcular distâncias: Usar distância riemanniana no espaço de formas
+    \item[\checkmark] Escolher $K$: Hierárquico ou conhecimento do domínio
+    \item[\checkmark] Escolher algoritmo:
+    \begin{itemize}
+        \item Se preocupado com \textit{outliers}: CLARANS ou Hill Climbing
+        \item Se precisar de velocidade: K-médias
+    \end{itemize}
+    \item[\checkmark] Aplicar Bagging se:
+    \begin{itemize}
+        \item Conjunto de dados é moderadamente grande ($N > 30$)
+        \item Há indícios de instabilidade em execuções repetidas
+        \item Usando CLARANS com \texttt{maxneighbor} pequeno
+    \end{itemize}
+    \item[\checkmark] Validar: Usar RI e/ou FMI se tiver rótulos de referência
+\end{enumerate}
+
+\subsection{Extensões Futuras}
+
+\begin{itemize}
+    \item \textbf{Boosting}: Em vez de amostras aleatórias, focar em objetos ``difíceis'' de agrupar
+    \item \textbf{Random Forests para Clustering}: Combinar subespaços aleatórios com agrupamento
+    \item \textbf{Paralelização}: Execuções bootstrap são independentes --- perfeitas para GPUs
+\end{itemize}
+
+%=====================================================================
+\section{Glossário de Termos}
+%=====================================================================
+
+\begin{description}[style=nextline]
+    \item[Marco (Landmark)] Ponto anatômico ou geométrico identificável em uma forma
+    \item[Configuração] Conjunto de marcos representados como matriz $k \times m$
+    \item[Pré-forma] Configuração após remoção de translação e escala
+    \item[Espaço de Formas] Conjunto de classes de equivalência de formas sob similaridades euclidianas
+    \item[Variedade Riemanniana] Espaço suave onde se pode medir distâncias e ângulos
+    \item[Espaço Estratificado] Espaço com regiões de suavidade separadas por singularidades
+    \item[Medoide] Objeto real do conjunto de dados que representa o centro de um grupo
+    \item[Centroide] Ponto médio (pode não ser um objeto real)
+    \item[Bootstrap] Amostragem com reposição do conjunto original
+    \item[Bagging] Bootstrap Aggregating --- técnica de ensemble
+    \item[Índice de Rand] Medida de concordância entre dois agrupamentos
+    \item[Anisotropia] Diferente variabilidade em diferentes direções
+\end{description}
+
+%=====================================================================
+\section{Referências e Leituras Complementares}
+%=====================================================================
+
+\begin{enumerate}
+    \item \textbf{Texto básico}: Dryden, I.L.
+\& Mardia, K.V.
+(2016).
+\textit{Statistical Shape Analysis}, 2nd ed.
+Wiley.
+    
+    \item \textbf{Artigo principal}: Nascimento, I., Ospina, R.
+\& Amorim, G.
+(2024).
+Using Bagging to improve clustering methods in the context of three-dimensional shapes.
+\textit{Advances in Data Analysis and Classification}.
+    
+    \item \textbf{Fundamentos}: Kendall, D.G.
+(1984).
+Shape manifolds, Procrustean metrics, and complex projective spaces.
+\textit{Bulletin of the London Mathematical Society}.
+    
+    \item \textbf{Bagging}: Breiman, L.
+(1996).
+Bagging predictors.
+\textit{Machine Learning}.
+    
+    \item \textbf{CLARANS}: Ng, R.T.
+\& Han, J.
+(2002).
+CLARANS: A method for clustering objects for spatial data mining.
+\textit{IEEE TKDE}.
+\end{enumerate}
+
+\end{document}

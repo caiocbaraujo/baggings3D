@@ -1,0 +1,236 @@
+% Tradução para português brasileiro (PT-BR) de:
+% Nascimento et al. -- Using Bagging to improve clustering methods in the context of three-dimensional shapes
+% Advances in Data Analysis and Classification (2024), https://doi.org/10.1007/s11634-024-00602-9
+% Fonte textual: bagging for clustering 3D.txt
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[brazilian,provide=*]{babel}
+\usepackage{amsmath,amssymb,amsfonts,mathtools}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\geometry{margin=2.5cm}
+
+\title{Uso de \emph{Bagging} para melhorar métodos de agrupamento no contexto de formas tridimensionais}
+\author{Inácio Nascimento \and Raydonal Ospina \and Getúlio Amorim}
+\date{Tradução não oficial para fins de estudo --- artigo original em inglês (Springer, 2024)}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Técnicas de análise de agrupamentos (\emph{cluster analysis}) são uma abordagem comum para classificar objetos de um conjunto de dados em grupos distintos. O agrupamento de formas geométricas de objetos tem grande importância em diversas áreas. Para analisar formas geométricas, pesquisadores frequentemente empregam métodos de análise estatística de formas (\emph{statistical shape analysis}), que retêm informação relevante após contabilizar escala, posição e rotação do objeto. Consequentemente, vários trabalhos adaptaram algoritmos de agrupamento à análise de formas. Recentemente, o agrupamento de formas tridimensionais (3D) tornou-se crucial para analisar, interpretar e utilizar dados 3D em indústrias diversas, incluindo medicina, robótica, engenharia civil e paleontologia. Neste estudo, adaptamos os métodos K-médias, CLARANS e \emph{Hill Climbing} mediante uma abordagem baseada em \emph{Bagging} para obter maior acurácia de agrupamento. Realizamos experimentos de simulação em cenários de isotropia e anisotropia, considerando várias variações de dispersão. Aplicamos a abordagem proposta a conjuntos de dados reais da literatura. Avaliamos os agrupamentos obtidos com medidas de validação, especificamente o índice de Rand e o índice de Fowlkes--Mallows. Nossos resultados mostram melhorias substanciais na qualidade do agrupamento ao implementar \emph{Bagging} em conjunto com K-médias, CLARANS e \emph{Hill Climbing}. A combinação de \emph{Bagging} com algoritmos de agrupamento proporcionou ganhos substanciais na qualidade dos grupos.
+\end{abstract}
+
+\noindent\textbf{Palavras-chave:} análise de agrupamentos; análise estatística de formas; formas tridimensionais; \emph{Bagging}; validação de agrupamentos.
+
+\noindent\textbf{MSC2020 (indicativo):} 62H10; 62H30; 62T10; 68T09; 68Q87.
+
+\medskip
+\noindent\textit{Nota do tradutor:} equações, definições e algoritmos seguem a notação do artigo original. Tabelas de simulação extensas (Tabelas 1--6 no original) estão resumidas aqui; consulte o PDF original para todos os valores numéricos. DOI: \url{https://doi.org/10.1007/s11634-024-00602-9}.
+
+\section{Introdução}
+
+Em muitas situações cotidianas, é relevante classificar indivíduos de um conjunto de dados em grupos, seja para compreender o fenômeno estudado ou para organizar dados. A análise de agrupamentos é um conjunto de técnicas que visa criar grupos de modo que cada elemento seja semelhante dentro do grupo, mas os grupos sejam diferentes entre si. Os métodos de agrupamento diferem de várias maneiras; Everitt et al.\ (2011) comentam que os dois principais tipos são hierárquicos e particionais. Os métodos de interesse neste trabalho são os particionais, que formam grupos a partir de uma partição inicial e de um número pré-definido $K$ de grupos. Inicialmente há uma partição inicial e, conforme o algoritmo, os elementos mudam de grupo até que se atinja uma versão final do agrupamento (Friedman e Rubin, 1967).
+
+O método das K-médias, proposto há mais de 50 anos, baseia-se na soma de quadrados dentro dos grupos (\emph{within-cluster sum of squares}, WSS). Visa minimizar a soma das distâncias ao quadrado entre pontos e os centroides dos respectivos grupos (Hastie et al., 2009; Jain, 2010). Outro método conhecido é o CLARANS (\emph{Clustering Algorithm based on Randomized Search}), introduzido por Ng e Han (2002), que utiliza um objeto representativo chamado medoide, posicionado mais próximo ao centro do grupo. O medoide reduz o espaço de busca, aumenta a robustez a \emph{outliers} e permite identificar estruturas de grupos mais complexas. Adicionalmente, o método \emph{Hill Climbing}, proposto por Friedman e Rubin (1967), busca iterativamente o agrupamento com valor ótimo de um critério dado, como WSS ou a soma de quadrados entre grupos (BSS).
+
+Representações geométricas e imagens de objetos desempenham papel vital em estudos e pesquisas em diversas áreas, incluindo biologia, medicina, neurociência, arqueologia e, com o avanço tecnológico, lógica, visão computacional e reconhecimento de padrões (Adams e Otárola-Castillo, 2013; Srivastava et al., 2005; Baxter, 2015; Srivastava e Klassen, 2016; Guo et al., 2023; King e Eckersley, 2019). A análise estatística de formas é um ramo da estatística usado para trabalhar com representações geométricas e formas de objetos. Na abordagem geométrica, a ideia central é utilizar a representação do próprio objeto. Certas operações matemáticas removem os efeitos de posição, escala e rotação, encapsulando a informação na forma. Aplicações práticas incluem comparar formas do córtex cerebral em pacientes com e sem esquizofrenia com base em ressonância magnética (Brignell et al., 2010).
+
+É necessário estudar medidas-resumo e comparações entre formas em várias áreas para compreender de modo mais profundo objetos e fenômenos. Desenvolver técnicas estatísticas no contexto de formas oferece abordagem sistemática e quantitativa para aplicações e teoria. Bookstein et al.\ (1986) e Kendall (1984) propuseram conceitos fundamentais da análise estatística de formas.
+
+Em várias situações, é necessário classificar conjuntos de dados de formas que pertencem a espaços não euclidianos. Nesse contexto, diversos autores adaptaram algoritmos. Para formas bidimensionais (2D), Amaral et al.\ (2010) adaptaram o K-médias de Hartigan e Wong (1979) para uma aplicação em oceanografia, classificando espécies de peixes por forma.
+
+Uma das principais vantagens de trabalhar com dados tridimensionais é analisar área superficial, volume e formas dos objetos. Embora existam muitas aplicações de dados 3D em ciência e tecnologia, há relativamente poucos estudos sobre formas 3D na literatura. Passar de 2D para 3D não é meramente adicionar uma dimensão: o espaço de formas 3D faz parte de um espaço estratificado com singularidades.\footnote{Aqui, singularidades referem-se a pontos ou regiões no espaço de formas onde ocorrem mudanças abruptas ou comportamentos não suaves nas propriedades geométricas --- por exemplo, picos e vales de curvatura, pontos de confluência de partes da forma, pontos de dobramento ou descontinuidades.} Essas singularidades podem tornar a análise mais complexa e computacionalmente custosa, ao contrário do espaço de formas 2D, que é uma variedade riemanniana (Bhattacharya e Bhattacharya, 2012).
+
+Poucos trabalhos com adaptações de métodos de agrupamento tratam formas 3D. Um dos mais relevantes, de Vinué et al.\ (2014), apresenta adaptações do K-médias (Lloyd, 1982) e do K-médias podado (García-Escudero e Gordaliza, 1999) para agrupar formas tridimensionais. Apesar da escassez desses métodos, o presente trabalho também adapta CLARANS (Ng e Han, 2002) e \emph{Hill Climbing} (Friedman e Rubin, 1967) ao contexto de formas 3D.
+
+Métodos de agrupamento podem se beneficiar de combinar ideias de outros algoritmos. O \emph{Bagging} tem sido aplicado junto a algoritmos de agrupamento para melhorar desempenho, incorporando novos conjuntos de treino formados por amostras \emph{bootstrap}. Um exemplo é o \emph{bagged clustering} de Leisch (1999), que combina métodos hierárquicos e particionais para melhorar estabilidade. Para algoritmos baseados em medoides, como PAM (Rousseeuw e Kaufman, 1990), Dudoit e Fridlyand (2003) utilizaram \emph{Bagging} para estabilizar resultados, com robustez a \emph{outliers}, consistência e menor sensibilidade à dimensionalidade.
+
+No contexto de análise de formas, Assis et al.\ (2021) introduzem \emph{Bagging} (Breiman, 1996) em conjunto com K-médias (MacQueen, 1967) para melhorar o agrupamento de formas 2D, com maior resistência a flutuações aleatórias nos dados.
+
+Motivados por esses trabalhos, este artigo utiliza o procedimento de \emph{Bagging} denominado BagClust1 (Dudoit e Fridlyand, 2003) para melhorar a qualidade do agrupamento de formas 3D obtido pelas versões adaptadas de K-médias, CLARANS e \emph{Hill Climbing}. Buscamos maior robustez e resistência a flutuações. Para avaliar a qualidade, usam-se o índice de Rand (Rand, 1971) e o índice de Fowlkes--Mallows (Fowlkes e Mallows, 1983). Para validar métricas obtidas por simulação, utiliza-se o teste de Wilcoxon pareado (Wilcoxon, 1992).
+
+O artigo organiza-se assim: a Seção~\ref{sec:fundamentos} trata de conceitos básicos de análise estatística de formas. A Seção~\ref{sec:algoritmos} apresenta adaptações dos algoritmos ao espaço de formas 3D. A Seção~\ref{sec:numerico} contém estudo de simulação e aplicações. A Seção~\ref{sec:conclusoes} discute conclusões.
+
+\section{Fundamentos}\label{sec:fundamentos}
+
+Segundo Kendall (1977), a informação geométrica de um objeto que permanece ao remover efeitos de posição, escala e rotação é denominada \emph{forma}. O livro de Dryden e Mardia (2016) sintetiza os principais conceitos e fixa a notação usada neste texto. Uma maneira de caracterizar a forma é detectar um conjunto finito de pontos ao redor do contorno, chamados marcos (\emph{landmarks}).
+
+Uma \textbf{configuração} é uma coleção de marcos em um dado objeto, representada matematicamente por uma matriz $X$ de dimensão $k \times m$, em que $k$ é o número de marcos e $m$ a dimensão (coordenadas cartesianas) de cada marco. O espaço de todas as coordenadas possíveis dos marcos é o espaço de configurações. Neste trabalho, $m=3$. Seguem definições segundo Dryden e Mardia (2016).
+
+\begin{description}
+  \item[Definição 1.] O \textbf{espaço de formas} é o espaço de todas as formas: o conjunto de classes de equivalência das matrizes de configuração sob a ação de transformações de similaridade euclidiana (translação, rotação e escala).
+\end{description}
+
+O espaço de formas admite estrutura de variedade riemanniana; métodos estatísticos ``padrão'' nem sempre se aplicam diretamente. A complexidade depende de $k$ e $m$. Quando $m=2$, o espaço de formas é um espaço projetivo complexo (Goodall e Mardia, 1999). Porém, para $m \geq 3$, o espaço de formas não é variedade riemanniana, e sim um espaço estratificado (Dryden e Mardia, 2016), com singularidades. Em aplicações, costuma-se supor que estamos longe dessas singularidades e em uma região de variação restrita.
+
+A matriz de configuração $X$ não descreve adequadamente o objeto por não ser invariante a similaridades euclidianas. Removem-se translação e rotação sucessivamente. Inicialmente, usam-se as coordenadas de Kendall (Kendall, 1984) com a submatriz de Helmert para remover translação: multiplica-se $X$ pela submatriz de Helmert $H$ (Dryden e Mardia, 2016, p.\ 49). A matriz de Helmert $H$ é ortogonal $k \times k$, com primeira linha com elementos $1/\sqrt{k}$, e a $j$-ésima linha com $(j-1)$ elementos iguais a $-\sqrt{\frac{1}{j(j+1)}}$, seguidos de um elemento $\sqrt{\frac{j}{j+1}}$ e $(k-j)$ zeros.
+
+Para eliminar escala, a configuração ``helmertizada'' divide-se pela sua norma:
+\begin{equation}
+  Z = \frac{HX}{\lVert HX \rVert}, \qquad
+  \lVert HX \rVert^2 = \operatorname{tr}\bigl((HX)^{\mathsf T}(HX)\bigr),
+\end{equation}
+onde $Z$ é a \textbf{pré-forma} de $X$. Na pré-forma, ainda permanecem efeitos de rotação.
+
+\begin{description}
+  \item[Definição 2.] O \textbf{espaço de pré-formas} $\mathcal{S}_m^k$ é o conjunto de todas as pré-formas possíveis,
+  \[
+    \mathcal{S}_m^k = \left\{ Z = \frac{HX}{\lVert HX \rVert} : X \in \mathbb{R}^{k \times m} \right\}.
+  \]
+\end{description}
+
+\begin{description}
+  \item[Definição 3.] A \textbf{forma} de uma matriz de configuração é toda a informação geométrica que permanece após remover posição, escala e rotação. Pode-se representar por
+  \begin{equation}
+    [Z] = \{ Z\Gamma : \Gamma \in SO(m) \},
+  \end{equation}
+  em que $\Gamma$ é matriz de rotação, $Z$ é a pré-forma e $SO(m)$ o grupo ortogonal especial de rotações.
+\end{description}
+
+Segundo Vinué et al.\ (2014), $\mathcal{S}_m^k$ é uma hiperesfera de raio unitário em $\mathbb{R}^{(k-1)m}$, subvariedade riemanniana amplamente estudada. Para $m>2$, o espaço de formas $\Sigma_m^k$ não é um espaço usual; por ser quociente de $\mathcal{S}_m^k$ sob rotações, em geral trabalha-se nesse quociente.
+
+Na prática, compara-se e alinha formas por \textbf{análise de Procrustes}, removendo translação, rotação e escala e minimizando distâncias entre pontos homólogos.
+
+\begin{description}
+  \item[Definição 4.] A \textbf{distância riemanniana} $\rho(X_1,X_2)$ é a menor distância ao longo de um grande círculo (sobre rotações) entre $Z_1$ e $Z_2$ na hiperesfera de pré-formas $\mathcal{S}_m^k$.
+  \item[Definição 5.] A \textbf{distância de Procrustes completa} entre $X_1$ e $X_2$ é
+  \[
+    d_F(X_1,X_2) = \inf_{\Gamma \in SO(m),\, \beta \in \mathbb{R}_+} \lVert Z_2 - \beta Z_1 \Gamma \rVert.
+  \]
+  Relação: $d_F = \sin(\rho)$.
+  \item[Definição 6.] A \textbf{média de forma de Procrustes completa} no espaço de formas é
+  \begin{equation}
+    [\hat\mu] = \arg\min_{\mu} \sum_{i=1}^{n} d_F^2(X_i, \mu).
+  \end{equation}
+\end{description}
+
+Para $m=2$, Kent (1994) apresenta solução via autovetores. Para $m \geq 3$, necessita-se processo iterativo (Algoritmo~1 em Dryden e Mardia, 2016, p.\ 138).
+
+\section{Agrupamento de formas tridimensionais}\label{sec:algoritmos}
+
+O problema de classificação em análise de formas é separar objetos em grupos com base na forma. Aqui consideram-se o K-médias adaptado por Vinué et al.\ (2014) e as adaptações de CLARANS e \emph{Hill Climbing}. Seja $\mathcal{X} = \{X_i,\ i=1,\ldots,n\}$ o conjunto de $n$ objetos (matrizes de configuração). Os algoritmos produzem $G = (G_r,\ r=1,\ldots,K)$ com $K$ grupos.
+
+\subsection{K-médias para formas 3D}
+
+O K-médias (Lloyd, 1982), na versão de Vinué et al.\ (2014), substitui a distância euclidiana pela distância riemanniana (Definição~4). O problema de otimização minimiza
+\begin{equation}
+  W = \sum_{r=1}^{K} \sum_{i \in G_r} \operatorname{Dist}^2(X_i, \mu_r),
+\end{equation}
+em que $\operatorname{Dist}$ é a distância riemanniana e $\mu_r$ a forma média (centroide) via Algoritmo~1. Os grupos dependem de partição inicial aleatória, podendo convergir a ótimo local; recomenda-se múltiplas inicializações. O método é sensível a \emph{outliers} por usar médias amostrais como centroides.
+
+\subsection{CLARANS para formas 3D}
+
+Ng e Han (2002) propuseram CLARANS como extensão do PAM. Em PAM, os representantes são medoides --- pontos do grupo com menor dissimilaridade média aos demais ---, o que reduz sensibilidade a \emph{outliers} em relação ao K-médias. O CLARANS explora o conjunto de dados como grafo cujos nós são conjuntos de medoides; cada nó tem até $K(n-K)$ vizinhos. Há parâmetros \texttt{maxneighbor} e \texttt{numlocal}. A adaptação ao espaço de formas 3D corresponde ao Algoritmo~3 do artigo original (distâncias e medoides no espaço de formas).
+
+\subsection{\emph{Hill Climbing} para formas 3D}
+
+O \emph{Hill Climbing} (Friedman e Rubin, 1967) reestrutura partições aceitando mudanças que melhoram um critério (pode ser visto como ``descida de colina'' quando se minimiza; Everitt et al., 2011). Aqui adapta-se para formas 3D. O critério de dissimilaridade total (Rousseeuw e Kaufman, 1990) é
+\begin{equation}
+  TD = \sum_{r=1}^{K} \sum_{i \in G_r} d(X_i, m_r),
+\end{equation}
+em que $m_r$ é o medoide do grupo $G_r$; valores menores de $TD$ indicam melhor agrupamento (Algoritmo~4 no original).
+
+\subsection{Algoritmo de \emph{Bagging}}
+
+``Agrupamentos por conjunto'' (\emph{clustering ensembles}) combinam várias execuções e depois aplicam função de consenso. O \emph{Bagging} (\emph{Bootstrap Aggregating}, Breiman, 1996) treina várias instâncias do mesmo algoritmo em subconjuntos \emph{bootstrap} e agrega saídas, reduzindo variância (Bühlmann, 2012).
+
+O procedimento BagClust1 (Dudoit e Fridlyand, 2003) aplica PAM repetidamente em cada amostra \emph{bootstrap} e define rótulo final por votação majoritária. Neste artigo, K-médias, CLARANS ou \emph{Hill Climbing} são aplicados $B$ vezes em amostras \emph{bootstrap}; o rótulo final é o mais votado por objeto (empates resolvidos ao acaso). O artigo original usa $B=100$ (em Dudoit e Fridlyand, 2003, costuma-se citar $B=20$ como eficaz). O Algoritmo~5 do original detalha permutações de rótulos entre réplicas para alinhar partições antes da votação.
+
+\section{Avaliação numérica}\label{sec:numerico}
+
+Comparam-se K-médias, CLARANS e \emph{Hill Climbing} com suas versões com \emph{Bagging}. Há experimentos simulados e duas bases reais. Usa-se a distância riemanniana (Definição~4). Implementações em R (R Core Team, 2024). Ambiente de computação descrito no original (processador Ryzen 3 2200U, 18\,GB RAM, R 4.4.0).
+
+Parâmetros: critério de parada do K-médias $10^{-4}$; 10 inicializações e 10 passos por inicialização; CLARANS com \texttt{numlocal}${}=2$ e \texttt{maxneighbor}$= 0{,}0125\, K(N-K)$; \emph{Hill Climbing} até tamanho máximo do laço. O número de grupos $K$ é conhecido \emph{a priori}; quando não for, sugere-se hierárquico para escolher $K$ (Everitt et al., 2001).
+
+Índices de validação: Rand (RI) e Fowlkes--Mallows (FMI), ambos em $[0,1]$ (1 indica concordância perfeita com os grupos verdadeiros). O artigo opta por não usar índice de Rand ajustado nem silhueta, pois podem assumir valores negativos. O teste de Wilcoxon pareado avalia se versões com \emph{Bagging} superam as sem \emph{Bagging} (alternativa unilateral; $\alpha=5\%$).
+
+Define-se o \textbf{ganho relativo} (\%) por
+\[
+  \text{Ganho relativo} = 100 \times \frac{\text{Índice}_{\text{Bagging}} - \text{Índice}}{\text{Índice}}.
+\]
+
+\subsection{Simulação}
+
+Dados simulados seguem a ideia de Vinué et al.\ (2014): figuras médias cubo e paralelepípedo, $k=8$ marcos, duas populações normais multivariadas em $\mathbb{R}^{3k}$ com matrizes de covariância $\Sigma_i$, $i=1,2$. Rotação em torno do eixo $z$ com ângulo aleatório (pacote CircStats, função \texttt{rvm}; distribuição von Mises). Cenários isotrópicos ($\Sigma_i = \sigma_i^2 I_{3k}$ com $\sigma_i \in \{3,6,9\}$) e anisotrópicos (estrutura de produto de Kronecker com parâmetro $\gamma=4$, como no artigo). Tamanho amostral $N=100$, $n_1=n_2=50$. Foram $50$ réplicas de Monte Carlo.
+
+\textit{Tabelas 1--6 do artigo original reportam médias e desvios-padrão de RI e FMI para cada método e cenário; consulte o PDF ou o DOI para os valores exatos.} Em síntese dos resultados do artigo: em isotropia, \emph{Bagging} melhora fortemente CLARANS e \emph{Hill Climbing} em vários cenários; para K-médias, ganhos significativos concentram-se em alguns casos de maior dispersão (FMI). Em anisotropia, K-médias não se beneficia de \emph{Bagging}; CLARANS e \emph{Hill Climbing} tendem a melhorar, sobretudo com dispersão média ou alta. Gráficos de violino das diferenças pareadas (Figuras~3 e~4 no original) ilustram esses padrões.
+
+\subsection{Cranios de macacos (\emph{Macaca fascicularis})}
+
+Amostra de $N=18$ indivíduos ($K=2$: 9 machos, 9 fêmeas), $k=7$ marcos anatômicos selecionados dentre 26 (Dryden e Mardia, 2016). A Tabela~\ref{tab:macacos} resume índices e ganhos relativos (valores conforme o artigo).
+
+\begin{table}[ht]\centering
+\caption{Resultados para o conjunto de dados de cranios de macacos.}
+\label{tab:macacos}
+\begin{tabular}{lcccccc}
+\toprule
+Método & RI s/ bag. & RI c/ bag. & Ganho RI & FMI s/ bag. & FMI c/ bag. & Ganho FMI \\
+\midrule
+K-médias      & 0{,}4967 & 0{,}4967 & 0{,}00\%  & 0{,}6214 & 0{,}6214 & 0{,}00\% \\
+CLARANS       & 0{,}5294 & 0{,}5527 & 4{,}11\%  & 0{,}5025 & 0{,}6124 & 21{,}86\% \\
+\emph{Hill}   & 0{,}4771 & 0{,}5285 & 10{,}78\% & 0{,}4967 & 0{,}6124 & 23{,}31\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+\noindent\small\textit{Nota:} valores da Tabela~7 conforme Nascimento et al.\ (2024); o RI com \emph{Bagging} para \emph{Hill Climbing} foi obtido de $0{,}4771 \times (1 + 0{,}1078)$, compatível com o ganho relativo de $10{,}78\%$ reportado; o ganho de FMI segue a fórmula de ganho relativo do artigo.
+
+\subsection{Cérebros (\emph{Brains})}
+
+$K=2$ grupos (43 destros, 15 canhotos), $k=24$ marcos por indivíduo (12 por hemisfério). Detalhes em Free et al.\ (2001). A Tabela~\ref{tab:cerebros} reproduz os resultados do artigo.
+
+\begin{table}[ht]\centering
+\caption{Resultados para o conjunto de dados de cérebros.}
+\label{tab:cerebros}
+\begin{tabular}{lcccccc}
+\toprule
+Método & RI s/ bag. & RI c/ bag. & Ganho RI & FMI s/ bag. & FMI c/ bag. & Ganho FMI \\
+\midrule
+K-médias      & 0{,}5208 & 0{,}5783 & 11{,}03\% & 0{,}5882 & 0{,}6824 & 16{,}00\% \\
+CLARANS       & 0{,}4967 & 0{,}5783 & 16{,}44\% & 0{,}5538 & 0{,}7282 & 31{,}13\% \\
+\emph{Hill}   & 0{,}4937 & 0{,}5783 & 17{,}15\% & 0{,}5452 & 0{,}7139 & 30{,}94\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Nesta base, todos os métodos se beneficiam de \emph{Bagging}, com ganhos relativos acima de 10\% nos índices reportados. Figuras de dispersão das formas nas primeiras componentes principais (Figuras~6 e~8 no original) seguem a visualização usual da literatura (Vinué et al., 2014).
+
+\section{Conclusões}\label{sec:conclusoes}
+
+A discussão sobre novos métodos em análise estatística de formas é relevante para a comunidade científica. Este artigo introduz K-médias, CLARANS e \emph{Hill Climbing} para agrupar formas 3D e aplica \emph{Bagging} para melhorar desempenho. Resultados experimentais indicam eficácia do \emph{Bagging} em vários cenários, embora dependa do algoritmo e dos dados. Ao contrário de estudos que mostram apenas a melhor execução única, aqui há simulação de Monte Carlo com médias, desvios-padrão e teste de Wilcoxon pareado.
+
+De modo geral, CLARANS e \emph{Hill Climbing} tendem a se beneficiar mais do \emph{Bagging}, possivelmente pela relação com critérios tipo PAM e pelo papel do parâmetro \texttt{maxneighbor}. K-médias apresenta melhorias mais limitadas. Em dados reais, o ganho depende das características de cada conjunto; para ``Brains'', os ganhos foram claros para todos os métodos.
+
+Como direções futuras, sugerem-se outros ensembles (por exemplo, \emph{Boosting}) e comparação com \emph{Bagging}; também paralelização ou métodos de subespaço aleatório para custo computacional (Lazarevic e Obradovic, 2002; García-Pedrajas e Ortiz-Boyer, 2008; Louppe e Geurts, 2012).
+
+\subsection*{Agradecimentos (tradução)}
+
+Este trabalho foi parcialmente apoiado pelo CNPq (n.\ 303192/2022-4 e 402519/2023-0, RO) e pela FACEPE, Brasil.
+
+\subsection*{Contribuições dos autores (tradução)}
+
+IN, RO e GA: conceituação, metodologia, análise formal, investigação, software, visualização, redação e revisão, recursos e captação de financiamento. Todos os autores contribuíram para a interpretação dos resultados e revisão do manuscrito.
+
+\subsection*{Conflito de interesses (tradução)}
+
+Os autores declaram não haver conflito de interesses. Os financiadores não participaram do desenho do estudo, coleta, análise ou interpretação dos dados, redação do manuscrito ou decisão de publicar.
+
+\begin{thebibliography}{99}
+\footnotesize
+\bibitem{adams2013} Adams DC, Otárola-Castillo E (2013). \textit{geomorph}: an R package\dots\ Methods Ecol Evol 4(4):393--399.
+\bibitem{amaral2010} Amaral GJA, Dore LH, Lessa RP, Stosic B (2010). K-means algorithm in statistical shape analysis. Commun Stat Simul Comput 39(5):1016--1026.
+\bibitem{assis2021} Assis ECD, Souza RMCRD, Amaral GJAD (2021). Using bagging to enhance clustering procedures for planar shapes. Int J Bus Intell Data Min 18(1):30--48.
+\bibitem{breiman1996} Breiman L (1996). Bagging predictors. Mach Learn 24(2):123--140.
+\bibitem{dryden2016} Dryden IL, Mardia KV (2016). \textit{Statistical shape analysis: with applications in R}, 2nd ed. Wiley.
+\bibitem{dudoit2003} Dudoit S, Fridlyand J (2003). Bagging to improve the accuracy of a clustering procedure. Bioinformatics 19(9):1090--1099.
+\bibitem{everitt2011} Everitt BS, Landau S, Leese M, Stahl D (2011). \textit{Cluster Analysis}, 5th ed. Wiley.
+\bibitem{fowlkes1983} Fowlkes EB, Mallows CL (1983). A method for comparing two hierarchical clusterings. J Am Stat Assoc 78(383):553--569.
+\bibitem{ng2002} Ng RT, Han J (2002). CLARANS: a method for clustering objects for spatial data mining. IEEE Trans Knowl Data Eng 14(5):1003--1016.
+\bibitem{rand1971} Rand WM (1971). Objective criteria for the evaluation of clustering methods. J Am Stat Assoc 66(336):846--850.
+\bibitem{vinue2014} Vinué G, Simó A, Alemany S (2014). The K-means algorithm for 3D shapes with an application to apparel design. Adv Data Anal Classif 10(1):103--132.
+\end{thebibliography}
+
+\end{document}

@@ -1,0 +1,10 @@
+\babel@toc {brazilian}{}\relax 
+\beamer@sectionintoc {1}{Introdução e Motivação}{3}{0}{1}
+\beamer@sectionintoc {2}{Background: Análise Estatística de Formas}{7}{0}{2}
+\beamer@sectionintoc {3}{Algoritmos de Agrupamento Adaptados}{12}{0}{3}
+\beamer@sectionintoc {4}{A Proposta: Bagging}{16}{0}{4}
+\beamer@sectionintoc {5}{Estudo de Simulação}{18}{0}{5}
+\beamer@sectionintoc {6}{Resultados das Simulações}{23}{0}{6}
+\beamer@sectionintoc {7}{Aplicações em Dados Reais}{32}{0}{7}
+\beamer@sectionintoc {8}{Conclusões e Trabalhos Futuros}{38}{0}{8}
+\beamer@sectionintoc {9}{Referências}{40}{0}{9}
