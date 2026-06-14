@@ -1,0 +1,305 @@
+% Roteiro de apresentação — Bagging e formas 3D
+% Caio Araújo & Marina Oliveira
+% Divisão: Alternativa A — bagging_slides_unico.pdf (46 slides)
+\documentclass[12pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[brazilian,provide=*]{babel}
+\usepackage{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{tcolorbox}
+
+\geometry{margin=2.2cm}
+\hypersetup{colorlinks=true, linkcolor=blue!60!black, urlcolor=blue!60!black}
+
+\definecolor{caio}{RGB}{20,45,105}
+\definecolor{marina}{RGB}{0,100,160}
+
+\newtcolorbox{blococaio}{
+  colback=caio!4, colframe=caio, fonttitle=\bfseries,
+  title={\textcolor{caio}{Caio Araújo}}
+}
+\newtcolorbox{blocomarina}{
+  colback=marina!4, colframe=marina, fonttitle=\bfseries,
+  title={\textcolor{marina}{Marina Oliveira}}
+}
+\newtcolorbox{dica}{
+  colback=orange!6, colframe=orange!70!black, fonttitle=\bfseries,
+  title=Dica para a apresentação
+}
+
+\title{\textbf{Roteiro de Apresentação}\\[0.2cm]
+\large Using Bagging to improve clustering methods in the context of three-dimensional shapes\\[0.15cm]
+\normalsize Nascimento, Ospina \& Amorim (2024)}
+\author{Caio Araújo \& Marina Oliveira\\Programa de Pós-Graduação em Estatística --- UFPE}
+\date{Junho de 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+\textbf{Divisão adotada (Alternativa A):}
+\textbf{Marina} --- slides \textbf{1--2} e \textbf{3--7} (abertura e introdução);
+\textbf{Caio} --- slides \textbf{8--26} (desafio geométrico, objetivos, background, algoritmos, Bagging e simulação);
+\textbf{Marina} --- slides \textbf{26--46} (resultados, dados reais e conclusões).
+O PDF \texttt{bagging\_slides\_unico.pdf} tem \textbf{46 slides}.
+Duração alvo: \textbf{35--40 minutos} + perguntas.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+%=====================================================================
+\section{Visão geral da divisão}
+%=====================================================================
+
+\begin{table}[h]
+\centering
+\caption{Resumo da divisão --- Alternativa A (números = slides do PDF)}
+\begin{tabular}{@{}clcc@{}}
+\toprule
+\textbf{Faixa} & \textbf{Conteúdo} & \textbf{Quem} & \textbf{Tempo est.} \\
+\midrule
+1--2 & Capa e sumário & \textbf{Marina} & 1--2 min \\
+3--7 & Introdução (SSA, agrupamentos, aplicações, literatura) & \textbf{Marina} & 6--7 min \\
+8--12 & Desafio 3D, Bagging na literatura, objetivos, início do background & \textbf{Caio} & 4--5 min \\
+13--26 & Fundamentos, algoritmos, Bagging e simulação & \textbf{Caio} & 14--16 min \\
+26--46 & Resultados, dados reais, conclusões e referências & \textbf{Marina} & 14--16 min \\
+\midrule
+ & \textbf{Total} & & \textbf{35--40 min} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{dica}
+\textbf{Transição Marina $\rightarrow$ Caio (slide 8):}
+\emph{``Depois de situar o artigo na literatura, o Caio explica por que formas 3D exigem métodos específicos e como o trabalho se propõe a resolvê-lo.''}
+
+\textbf{Slide 26 (passagem Caio $\rightarrow$ Marina):}
+Caio encerra com \emph{Formas simuladas}; Marina entra com
+\emph{``Com esse desenho experimental, vejamos se o Bagging melhora os métodos''}
+e segue no slide 27.
+\end{dica}
+
+\subsection{Mapa rápido por seção do PDF}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{@{}rlcl@{}}
+\toprule
+\textbf{Slides} & \textbf{Seção} & \textbf{Quem} & \textbf{Tema} \\
+\midrule
+1--2 & --- & Marina & Capa e sumário \\
+3--7 & Intro & Marina & SSA, agrupamentos, aplicações, revisão literária \\
+8--10 & Intro (cont.) & Caio & Desafio central, Bagging na literatura, objetivos \\
+11--12 & Background & Caio & Fundamentos (início) \\
+13--15 & Background & Caio & Pré-forma, Procrustes, distâncias \\
+16--19 & Algoritmos & Caio & K-means, CLARANS, Hill Climbing \\
+20--21 & Bagging & Caio & Conceito e BagClust1 \\
+22--26 & Simulação & Caio & Desenho experimental e figuras \\
+27--35 & Resultados & Marina & Tabelas, violinos, síntese \\
+36--41 & Dados reais & Marina & Macacos e cérebros \\
+42--43 & Conclusões & Marina & Síntese e trabalhos futuros \\
+44--46 & Referências & --- & Backup \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%=====================================================================
+\section{Materiais de estudo por apresentador}
+%=====================================================================
+
+\subsection{O que Marina deve dominar (slides 1--7 e 26--46)}
+
+\begin{blocomarina}
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Slides 1--2}: apresentar o artigo (Nascimento et al., 2024), autores e estrutura do sumário.
+  \item \textbf{Slide 3} --- SSA: ramo da estatística para representações geométricas; geometria como informação relevante (Dryden \& Mardia, 2016).
+  \item \textbf{Slide 4} --- Agrupamento particional: K-means, CLARANS, Hill Climbing (visão geral; Everitt et al., 2011).
+  \item \textbf{Slide 5} --- Aplicações: medicina, biologia, engenharia, arqueologia (Adams \& Otárola-Castillo, 2013; Brignell et al., 2010).
+  \item \textbf{Slide 6} --- Representação por marcos; definição de forma; objetivo do artigo.
+  \item \textbf{Slide 7} --- Revisão literária 2D$\rightarrow$3D: Amaral, Assis, Vinué, Nascimento et al.; lacuna CLARANS/HC em 3D.
+  \item \textbf{Slides 27--35} --- Resultados da simulação: Tabelas~1--6, Figuras~3--4; mensagem por $\sigma$.
+  \item \textbf{Slides 36--41} --- Dados reais: ganho relativo; Tabelas~7--8; Figuras~5--8.
+  \item \textbf{Slides 42--43} --- Conclusões, trabalhos futuros; encerramento.
+\end{enumerate}
+\end{blocomarina}
+
+\subsection{O que Caio deve dominar (slides 8--26)}
+
+\begin{blococaio}
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Slides 8--10} --- Fechamento da introdução:
+        espaço estratificado (desafio central); antecedentes do Bagging (Breiman, Dudoit, Assis);
+        objetivos e contribuição de Nascimento et al.\ (2024).
+  \item \textbf{Slides 11--12} --- Início do background: marcos, configuração $X$; por que não usar distância euclidiana.
+  \item \textbf{Slides 13--15} --- Fundamentos (Seção~2):
+        pré-forma $Z = HX/\|HX\|$, classe $[Z]$, distâncias $\rho$, $d_F$, média de Fréchet.
+  \item \textbf{Slides 16--19} --- Algoritmos (Seção~3): K-means, CLARANS, Hill Climbing.
+  \item \textbf{Slides 20--21} --- BagClust1: bootstrap, votação, $B=100$.
+        \emph{Opcional:} \texttt{manim/output/clip05\_bagclust1.mp4}.
+  \item \textbf{Slides 22--26} --- Simulação (Seção~4.1): cubo/paralelepípedo, cenários, RI/FMI, Wilcoxon; Figuras~1--2.
+\end{enumerate}
+\end{blococaio}
+
+%=====================================================================
+\section{Roteiro slide a slide}
+%=====================================================================
+
+\subsection{Slides 1--7 --- Marina Oliveira (abertura e introdução)}
+
+\begin{longtable}{@{}p{1.1cm}p{5.2cm}p{2cm}p{5.9cm}@{}}
+\toprule
+\textbf{Sl.} & \textbf{Título no PDF} & \textbf{Quem} & \textbf{O que falar / estudar} \\
+\midrule
+\endhead
+1 & Capa & Marina & Cumprimentar a plateia; título do artigo e apresentadoras. \\
+2 & Sumário & Marina & Percorrer as seções; antecipar estrutura da talk. \\
+3 & Análise estatística de formas & Marina & SSA: geometria como informação; agrupamento em 3D. \\
+4 & Análise de agrupamentos & Marina & Particionais; três algoritmos do artigo (visão geral). \\
+5 & Aplicações da análise de formas & Marina & Medicina, biologia, engenharia, arqueologia; figuras. \\
+6 & Representação geométrica e agrupamento & Marina & Marcos $k\times m$; forma; objetivo (Bagging em 3D). \\
+7 & Revisão: formas 2D $\rightarrow$ 3D & Marina & Tabela literária; lacuna; preparar passagem para Caio. \\
+\midrule
+\multicolumn{4}{l}{\textit{Transição $\rightarrow$ Caio (slide 8): ver caixa \textbf{Dica} na Seção~1.}} \\
+\bottomrule
+\end{longtable}
+
+\subsection{Slides 8--12 --- Caio Araújo (fechamento da intro e início do background)}
+
+\begin{longtable}{@{}p{1.1cm}p{5.2cm}p{2cm}p{5.9cm}@{}}
+\toprule
+\textbf{Sl.} & \textbf{Título} & \textbf{Quem} & \textbf{O que falar / estudar} \\
+\midrule
+\endhead
+8 & Desafio central & Caio & Espaço estratificado; singularidades; métricas adequadas. \\
+9 & Bagging em agrupamento: antecedentes & Caio & Breiman, Leisch, Dudoit, Assis (2D); motivação para 3D. \\
+10 & Objetivos e contribuição & Caio & Três objetivos; lacuna (Vinué só K-means). \\
+11 & Fundamentos da análise de formas & Caio & Marcos; espaço de formas; Kendall (1977). \\
+12 & Por que não similaridade euclidiana? & Caio & Translação, escala, rotação; pipeline Helmert. \\
+\midrule
+\multicolumn{4}{l}{\textit{Clipe sugerido após slide 12:} \texttt{clip01\_mesma\_forma.mp4}} \\
+\bottomrule
+\end{longtable}
+
+\subsection{Slides 13--26 --- Caio Araújo (teoria, métodos e simulação)}
+
+\begin{longtable}{@{}p{1.1cm}p{5.2cm}p{2cm}p{5.9cm}@{}}
+\toprule
+\textbf{Sl.} & \textbf{Título} & \textbf{Quem} & \textbf{O que falar / estudar} \\
+\midrule
+\endhead
+13 & Pré-forma e remoção de efeitos & Caio & Eq.~(1): $Z = HX/\|HX\|$; Helmert. \\
+14 & Forma e análise de Procrustes & Caio & $[Z] = \{Z\Gamma\}$; singularidades em 3D. \\
+15 & Distâncias e forma média & Caio & Def.~4--6: $\rho$, $d_F$, média de Fréchet. \\
+16 & Agrupamento de formas tridimensionais & Caio & Notação $\mathcal{X}$, partição $G$. \\
+17 & 3.1 K-means para formas 3D & Caio & WSS (eq.~4); forma média. \\
+18 & 3.2 CLARANS para formas 3D & Caio & Medoides; parâmetros do algoritmo. \\
+19 & 3.3 Hill Climbing para formas 3D & Caio & Critério $TD$; ótimos locais. \\
+\midrule
+\multicolumn{4}{l}{\textit{Clipe sugerido:} \texttt{clip04\_instabilidade.mp4}} \\
+\midrule
+20 & Bagging: conceito e motivação & Caio & Ensemble; BagClust1; $B=100$. \\
+21 & Procedimento BagClust1 & Caio & Bootstrap, votação, consenso. \\
+\midrule
+\multicolumn{4}{l}{\textit{Clipe sugerido:} \texttt{clip05\_bagclust1.mp4}} \\
+\midrule
+22 & Avaliação numérica & Caio & Comparação com/sem Bagging; parâmetros. \\
+23 & Geração dos dados simulados & Caio & Cubo e paralelepípedo; von Mises. \\
+24 & Cenários de dispersão & Caio & Isotropia/anisotropia; $\sigma \in \{3,6,9\}$. \\
+25 & Desenho experimental e validação & Caio & 50 réplicas MC; RI/FMI; Wilcoxon. \\
+26 & Formas simuladas & Caio & Figuras 1--2; \textbf{passagem de voz para Marina}. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Slides 26--46 --- Marina Oliveira (resultados e encerramento)}
+
+\begin{longtable}{@{}p{1.1cm}p{5.2cm}p{2cm}p{5.9cm}@{}}
+\toprule
+\textbf{Sl.} & \textbf{Título} & \textbf{Quem} & \textbf{O que falar / estudar} \\
+\midrule
+\endhead
+26 & Formas simuladas & Caio / Marina & \textbf{Handoff:} Caio nas figuras; Marina introduz resultados. \\
+27 & Efeito do Bagging na simulação & Marina & Mensagem-chave por $\sigma$; CLARANS/HC. \\
+\midrule
+\multicolumn{4}{l}{\textit{Clipe sugerido:} \texttt{clip06\_ganho.mp4}} \\
+\midrule
+28--30 & Resultados: Isotropia (3 tabelas) & Marina & Destacar $p$-values em $\sigma=6,9$. \\
+31 & Isotropia: Violin Plots & Marina & Fig.~3. \\
+32--34 & Resultados: Anisotropia (3 tabelas) & Marina & Padrão semelhante. \\
+35 & Anisotropia: Violin Plots & Marina & Fig.~4. \\
+36 & Ganho relativo & Marina & Fórmula (\%); uso nos dados reais. \\
+37 & Aplicação a dados reais & Marina & Macacos e cérebros. \\
+38 & Crânios de macacos & Marina & Tabela~7. \\
+39 & Macacos: Agrupamento nas PCs & Marina & Fig.~6. \\
+40 & Cérebros humanos & Marina & Tabela~8. \\
+41 & Cérebros: Agrupamento nas PCs & Marina & Fig.~8. \\
+42 & Conclusões & Marina & Síntese dos resultados. \\
+43 & Trabalhos futuros & Marina & ``Obrigado! Perguntas?'' \\
+44--46 & Referências & --- & Backup. \\
+\bottomrule
+\end{longtable}
+
+%=====================================================================
+\section{Checklist de ensaio (ambos)}
+%=====================================================================
+
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Transições obrigatórias a ensaiar}
+  \begin{itemize}
+    \item \textbf{Marina $\rightarrow$ Caio} (slide 7 $\rightarrow$ 8): literatura $\rightarrow$ desafio geométrico e objetivos.
+    \item \textbf{Caio $\rightarrow$ Marina} (slide 26 $\rightarrow$ 27): simulação $\rightarrow$ resultados.
+  \end{itemize}
+
+  \item \textbf{Q\&A --- quem responde o quê}
+  \begin{itemize}
+    \item \textbf{Marina}: SSA, aplicações, revisão literária, tabelas, violinos, dados reais, conclusões.
+    \item \textbf{Caio}: desafio 3D, fundamentos, distâncias, algoritmos, BagClust1, desenho da simulação.
+  \end{itemize}
+
+  \item \textbf{Mensagens que não podem faltar}
+  \begin{itemize}
+    \item Formas 3D $\Rightarrow$ espaço não euclidiano / estratificado.
+    \item Bagging reduz variância e mitiga ótimos locais.
+    \item Maior benefício com dispersão média-alta e dados complexos (cérebros).
+    \item Trade-off: acurácia vs.\ custo computacional ($B=100$).
+  \end{itemize}
+\end{enumerate}
+
+%=====================================================================
+\section{Clipes Manim (opcionais)}
+%=====================================================================
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Clipe} & \textbf{Após slide} & \textbf{Quem} \\
+\midrule
+\texttt{clip01\_mesma\_forma.mp4} & 12 & Caio \\
+\texttt{clip04\_instabilidade.mp4} & 19 & Caio \\
+\texttt{clip05\_bagclust1.mp4} & 21 & Caio \\
+\texttt{clip06\_ganho.mp4} & 27 & Marina \\
+\bottomrule
+\end{tabular}
+\caption{Vídeos em \texttt{manim/output/}}
+\end{table}
+
+\vspace{1em}
+\noindent
+\textbf{Leitura para ensaio:}
+(1)~material didático;
+(2)~\texttt{bagging\_clustering\_3D\_ptBR.pdf};
+(3)~slides na ordem do PDF;
+(4)~artigo original para tabelas e equações.
+
+\end{document}
