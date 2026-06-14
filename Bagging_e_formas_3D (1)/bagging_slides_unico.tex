@@ -101,18 +101,21 @@
 \section[Intro]{Introdução e Motivação}
 
 \begin{frame}[t]
-    \frametitle{O Problema}
-    \framesubtitle{Agrupamento de formas geométricas em 3D}
+    \frametitle{Análise estatística de formas}
+    \framesubtitle{\textit{Statistical Shape Analysis} (Nascimento et al., 2024)}
 
     \vspace{-0.1cm}
     \begin{columns}[T,onlytextwidth]
         \column{0.57\textwidth}
-        \begin{block}{Contexto motivador}
+        \begin{block}{Um ramo da estatística}
             \small
-            Classificar objetos pela \textbf{forma} --- estrutura geométrica após remover escala e posição --- é central em paleontologia, medicina e engenharia. O tamanho sozinho raramente basta para separar grupos.
+            A \textbf{análise estatística de formas} (\textit{Statistical Shape Analysis}) trabalha com \textbf{representações geométricas} e \textbf{formas de objetos}: a \textbf{geometria} é a informação relevante, após remover efeitos de posição, escala e rotação (Dryden \& Mardia, 2016).
         \end{block}
+        \vspace{0.15em}
+        \small
+        Representações geométricas são centrais em estudos em diversas áreas; o agrupamento de \textbf{formas 3D} tornou-se crucial para analisar e interpretar dados tridimensionais.
         \column{0.41\textwidth}
-        \figpainel[0.30\textheight]{fóssil.png}{Morfologia de fósseis: agrupamento por forma, não por escala.}
+        \figpainel[0.30\textheight]{fóssil.png}{Forma como informação morfológica, independente de escala e posição.}
     \end{columns}
 \end{frame}
 
@@ -143,37 +146,48 @@
 
 \begin{frame}[t]
     \frametitle{Aplicações da análise de formas}
-    \framesubtitle{Aplicações em morfometria e análise de formas}
+    \framesubtitle{Medicina, biologia, engenharia e arqueologia (Adams \& Otárola-Castillo, 2013)}
 
-    \vspace{-0.2cm}
+    \vspace{-0.15cm}
+    \begin{block}{Onde a geometria importa}
+        \footnotesize
+        \begin{itemize}
+            \setlength{\itemsep}{0.12em}
+            \item \textbf{Medicina}: morfologia de órgãos (cérebro, coração); neurociência e diagnóstico (Brignell et al., 2010)
+            \item \textbf{Biologia}: classificação de espécies pela morfologia de estruturas anatômicas
+            \item \textbf{Engenharia}: controle de qualidade e análise de peças manufacturadas em 3D
+            \item \textbf{Arqueologia}: comparação de artefatos e morfologia de fósseis entre grupos ou culturas
+        \end{itemize}
+    \end{block}
+    \vspace{0.15em}
     \begin{columns}[T,onlytextwidth]
-        \column{0.49\textwidth}
-        \figpainel[0.175\textheight]{cerebro.png}{Medicina / neurociência (ex.: córtex, RM)}
-        \vspace{0.25em}
-        \figpainel[0.175\textheight]{coração.png}{Medicina: morfologia cardíaca}
-        \column{0.49\textwidth}
-        \figpainel[0.175\textheight]{motor.png}{Engenharia: controle de qualidade 3D}
-        \vspace{0.25em}
-        \figpainel[0.175\textheight]{abelhas.png}{Biologia: morfologia e classificação de espécies}
+        \column{0.24\textwidth}
+        \figpainel[0.14\textheight]{cerebro.png}{Medicina}
+        \column{0.24\textwidth}
+        \figpainel[0.14\textheight]{abelhas.png}{Biologia}
+        \column{0.24\textwidth}
+        \figpainel[0.14\textheight]{motor.png}{Engenharia}
+        \column{0.24\textwidth}
+        \figpainel[0.14\textheight]{fóssil.png}{Arqueologia}
     \end{columns}
 \end{frame}
 
 \begin{frame}[t]
-    \frametitle{Análise estatística de formas}
-    \framesubtitle{Representação geométrica de objetos (Kendall, 1984; Dryden \& Mardia, 2016)}
+    \frametitle{Representação geométrica e o problema do agrupamento}
+    \framesubtitle{Da forma ao agrupamento em 3D (Kendall, 1984; Bookstein et al., 1986)}
 
     \begin{columns}[T,onlytextwidth]
         \column{0.58\textwidth}
         \footnotesize
-        Ramo da estatística que trabalha com a \textbf{geometria} dos objetos, representados por \textbf{marcos} (\textit{landmarks}) --- matriz $X \in \mathbb{R}^{k\times m}$.
+        Na abordagem geométrica da SSA, utiliza-se a \textbf{representação do próprio objeto} --- por exemplo, \textbf{marcos} (\textit{landmarks}) em $\mathbb{R}^{k\times m}$, com $m=3$.
         \begin{itemize}
-            \setlength{\itemsep}{0.2em}
-            \item \textbf{Forma}: informação que resta após remover \textbf{posição}, \textbf{escala} e \textbf{rotação} (Kendall, 1977)
-            \item Comparação exige métricas próprias (Procrustes / riemanniana), não a distância euclidiana usual
-            \item Conceitos fundamentais: Bookstein et al.\ (1986); Kendall (1984)
+            \setlength{\itemsep}{0.18em}
+            \item \textbf{Forma}: informação que permanece ao remover \textbf{posição}, \textbf{escala} e \textbf{rotação} (Kendall, 1977)
+            \item Vários trabalhos adaptaram algoritmos de \textbf{agrupamento} a esse contexto (Amaral et al., 2010; Vinué et al., 2014)
+            \item Objetivo deste artigo: melhorar o agrupamento de \textbf{formas 3D} com \textbf{Bagging}
         \end{itemize}
         \column{0.40\textwidth}
-        \figpainel[0.32\textheight]{cerebro.png}{Ex.: morfologia do córtex cerebral em estudos clínicos (Brignell et al., 2010).}
+        \figpainel[0.32\textheight]{coração.png}{Ex.: morfologia cardíaca --- forma, não apenas tamanho.}
     \end{columns}
 \end{frame}
 
@@ -1039,6 +1053,16 @@
         Bookstein, F.\ L.
         Size and shape spaces for landmark data in two dimensions.
         \textit{Statistical Science}, 1(2):181--222, 1986.
+
+        \bibitem{adams2013}
+        Adams, D.\ C.; Otárola-Castillo, E.
+        Geomorph: an R package for the collection and analysis of geometric morphometric shape data.
+        \textit{Methods in Ecology and Evolution}, 4(4):393--399, 2013.
+
+        \bibitem{brignell2010}
+        Brignell, C.\ J.; Dryden, I.\ L.; Gattone, S.\ A.; Park, B.; Leask, S.; Browne, W.\ J.; Flynn, S.
+        Surface shape analysis with an application to brain surface asymmetry in schizophrenia.
+        \textit{Biostatistics}, 11(4):609--630, 2010.
     \end{thebibliography}
 \end{frame}
 
